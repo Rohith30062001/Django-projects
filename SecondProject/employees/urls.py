@@ -11,4 +11,6 @@ urlpatterns = [
     path('logout',views.logout, name='logout'),
     path('book',views.book, name='book'),
     path('viewbookings',views.viewBookings, name='book'),
+    path('cancelbooking',views.cancelbooking, name='cancelbooking'),
+    path('packages',views.packages, name='packages'),
 ]

@@ -6,5 +6,6 @@ class Bookings(models.Model):
     tripDate = models.DateField(max_length=20)
     bookingDate = models.DateField(max_length=20)
     userName = models.CharField(max_length=100)
+    price = models.IntegerField(null = True)
 
     
