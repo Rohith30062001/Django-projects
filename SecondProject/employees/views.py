@@ -3,10 +3,10 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, user_logged_in
 from django.contrib import messages
 from datetime import date
-from employees.models import Bookings
+from employees.models import Bookings, Test, Favorite_places
 from django.template import loader
-from django.contrib.auth import login
-
+from django.contrib.auth import login as auth_login
+from django.contrib.auth import logout as logoutuser
 # Create your views here.
 def home(request):
     return render(request, 'home.html')
@@ -40,73 +40,115 @@ def register(request):
 
 
 def loginperson(request):
-    usernme = request.POST['username']
-    passwrd = request.POST['password']
-    user = authenticate( username= usernme, password = passwrd)
-    # need to check the data in database to give access
-    # return render(request, 'home.html')
-    if user is not None:
-        template = loader.get_template('home.html')
-        context = {
-            'userName':usernme,
-            }
-        login(request)
-        print('the current user:', request.user)
-        return HttpResponse(template.render(context, request))
-        # return redirect('/home')
-        # template = loader.get_template('home.html')
-        # context = {
-        #     'name':usernme,
-        #     }
-        # return HttpResponse(template.render(context, request))
+    if request.method == 'POST':
+        usernme = request.POST['username']
+        passwrd = request.POST['password']
+        user = authenticate( username= usernme, password = passwrd)
+        # need to check the data in database to give access
+        # return render(request, 'home.html')
+        if user is not None:
+            template = loader.get_template('home.html')
+            context = {
+                'userName':usernme,
+                }
+            auth_login(request, user)
+            print('the current user:', request.user, user.is_authenticated, request.user.is_authenticated)
+            return HttpResponse(template.render(context, request))
+            # return redirect('/home')
+            # template = loader.get_template('home.html')
+            # context = {
+            #     'name':usernme,
+            #     }
+            # return HttpResponse(template.render(context, request))
+        else:
+            messages.info(request,'No user Found')
+            return render(request, 'login.html')
     else:
-        messages.info(request,'No user Found')
-        return render(request, 'login.html')
+        return render(request, home.html)
 def logout(request):
+    logoutuser(request=request)
     return redirect('/loginuser')
 
 def book(request):
     print('booked')
-    if request.method == 'POST':
-        # username = request.user
-        username = request.GET.get('user')
-        dest = request.POST['destination']
-        if request.POST['date']:
-            tripdate = request.POST['date']
-        else:
+    if request.user.is_authenticated:
+        #process
+        if request.method == 'POST':
+            # username = request.user
+            username = request.GET.get('user')
+            dest = request.POST['destination']
+            if request.POST['date']:
+                tripdate = request.POST['date']
+            else:
+                tripdate = date.today()
+            print('****************************',dest, date, username)
+            if request.GET.get('price'):
+                price = request.GET.get('price')
+            else:
+                price = 600
+            bookDate = date.today()
+            book = Bookings(destnation = dest, tripDate = tripdate, bookingDate = bookDate, userName = username, price = price)
+            book.save()
+            return render(request, 'thankyou.html', {'data':'BOOKING CONFIRMED!'})
+        
+        elif request.method == 'GET':
+            username = request.user
+            dest = request.GET.get('destination')
             tripdate = date.today()
-        print('****************************',dest, date, username)
-        if request.GET.get('price'):
+            bookDate = date.today()
             price = request.GET.get('price')
+            print('finally^^^^^^^^^^^^^^^^^^^^^', username, dest,price, tripdate)
+            book = Bookings(destnation = dest, tripDate = tripdate, bookingDate = bookDate, userName = username, price = price)
+            book.save()
+            return render(request, 'thankyou.html', {'data':'BOOKING CONFIRMED!'})
         else:
-            price = 600
-        bookDate = date.today()
-        book = Bookings(destnation = dest, tripDate = tripdate, bookingDate = bookDate, userName = username, price = price)
-        book.save()
-        return render(request, 'thankyou.html', {'data':'BOOKING CONFIRMED!'})
+            return HttpResponse('something wrong')
     else:
-        return HttpResponse('something wrong')
+        return redirect("/loginuser")
+    
 
 def viewBookings(request):
-    username = request.GET.get('user')
-    print('&&&&&&&&&&&&&&&&',username)
-    data = Bookings.objects.all().values()
-    data = data.filter(userName = username)
-    print('###############',data)
-    template = loader.get_template('bookings.html')
-    context = {
-        'orderDetails':data,
-        }
-    return HttpResponse(template.render(context, request))
+    if request.user.is_authenticated:
+        #process
+        username = request.GET.get('user')
+        print('&&&&&&&&&&&&&&&&',username)
+        data = Bookings.objects.all().values()
+        data = data.filter(userName = username)
+        print('###############',data)
+        template = loader.get_template('bookings.html')
+        context = {
+            'orderDetails':data,
+            }
+        return HttpResponse(template.render(context, request))
+    else:
+        return redirect("/loginuser")
+    
 
 def cancelbooking(request):
-    id = request.GET.get('id')
-    print('the data to delte is',id)
-    # Bookings.delete(id)
-    # x = Bookings.objects.all()[int(id)]
-    # x.delete()
-    Bookings.objects.filter(id=id).delete()
-    return render(request, 'thankyou.html', {'data':'CANCEL CONFIRMED!'})
-
+    if request.user.is_authenticated:
+        id = request.GET.get('id')
+        print('the data to delte is',id)
+        # Bookings.delete(id)
+        # x = Bookings.objects.all()[int(id)]
+        # x.delete()
+        Bookings.objects.filter(id=id).delete()
+        return render(request, 'thankyou.html', {'data':'CANCEL CONFIRMED!'})
+    else:
+        return redirect("/loginuser")
+    
 def packages(request):
-    return render(request, 'packages.html')
+    if request.user.is_authenticated:
+        return render(request, 'packages.html')
+    else:
+        return redirect("/loginuser")
+
+def test_join(request):
+    data = Test.objects.select_related('userName'). values
+    return HttpResponse(data)
+
+def favorite(request):
+    if request.user.is_authenticated:
+        data = Favorite_places.objects.all().values()
+        return render(request, 'favorite_places.html',{'data': data})
+    else:
+        return redirect("/loginuser")

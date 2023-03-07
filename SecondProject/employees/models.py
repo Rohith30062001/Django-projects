@@ -8,4 +8,14 @@ class Bookings(models.Model):
     userName = models.CharField(max_length=100)
     price = models.IntegerField(null = True)
 
+class Test(models.Model):
+    userName = models.ForeignKey(
+        "Bookings", on_delete=models.CASCADE)
+
+class Favorite_places(models.Model):
+    picture = models.ImageField()
+    price = models.IntegerField()
+    destination = models.CharField(max_length=100)
+    time = models.TimeField()
+    quotation = models.CharField(max_length=100, null=True)
     

@@ -13,4 +13,6 @@ urlpatterns = [
     path('viewbookings',views.viewBookings, name='book'),
     path('cancelbooking',views.cancelbooking, name='cancelbooking'),
     path('packages',views.packages, name='packages'),
+    path('test',views.test_join, name='test'),
+    path('favorite',views.favorite, name='favorite'),
 ]
